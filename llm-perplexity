@@ -1,0 +1,13 @@
+source .venv/bin/activate
+
+source .venv/Scripts/activate
+
+llm install llm-perplexity
+
+llm keys set perplexity
+
+llm models
+
+llm -m sonar-reasoning-pro "who is the main developer of polars?"
+
+llm -m sonar-pro "regex to match a UK phone number" > phone-regex.txt
