@@ -1,0 +1,18 @@
+# linux
+# source .venv/bin/activate
+
+# windows bash
+source .venv/Scripts/activate
+
+llm install llm-perplexity
+
+llm keys set perplexity
+
+llm models
+
+llm -m sonar-reasoning-pro "who is the main developer of polars?"
+
+llm -m sonar-pro "regex to match a UK phone number" > phone-regex.txt
+
+llm -m sonar-pro 'I have a mutate statement that I want to turn into a function which takes an unquoted tibble name as the first argument, and an unquoted column name as the second argument, and returns the column name with the transformed text. The mutate statement is this: mutate(tbl, site_id = str_extract(site_id, pattern = ".*?\\d+(?=[_a-zA-Z]|$)")) Please can you give me the function I can use in my dplyr pipeline'
+
