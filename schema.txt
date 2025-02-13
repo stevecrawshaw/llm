@@ -1,0 +1,134 @@
+CREATE OR REPLACE TABLE measure (
+    measure_id  INTEGER NOT NULL PRIMARY KEY,
+    measure     VARCHAR,
+    other_priorities_delivered VARCHAR,
+    core_supplementary        VARCHAR,
+    mapped_unmapped           VARCHAR,
+    relevant_map_layer        VARCHAR,
+    link_to_further_guidance  VARCHAR
+);
+
+
+CREATE OR REPLACE TABLE measure_type (
+    measure_type_id INTEGER NOT NULL PRIMARY KEY DEFAULT,
+    measure_type    VARCHAR
+);
+
+CREATE OR REPLACE TABLE stakeholder (
+    stakeholder_id INTEGER NOT NULL PRIMARY KEY DEFAULT,
+    stakeholder    VARCHAR
+);
+
+CREATE OR REPLACE TABLE measure_has_type (
+    measure_id      INTEGER NOT NULL,
+    measure_type_id INTEGER NOT NULL,
+    PRIMARY KEY (measure_id, measure_type_id),
+    FOREIGN KEY (measure_id)      REFERENCES measure(measure_id),
+    FOREIGN KEY (measure_type_id) REFERENCES measure_type(measure_type_id)
+);
+
+CREATE OR REPLACE TABLE measure_has_stakeholder (
+    measure_id     INTEGER NOT NULL,
+    stakeholder_id INTEGER NOT NULL,
+    PRIMARY KEY (measure_id, stakeholder_id),
+    FOREIGN KEY (measure_id)     REFERENCES measure(measure_id),
+    FOREIGN KEY (stakeholder_id) REFERENCES stakeholder(stakeholder_id)
+);
+
+
+CREATE OR REPLACE TABLE area (
+    area_id          INTEGER NOT NULL PRIMARY KEY,
+    area_name        VARCHAR,
+    area_description VARCHAR,
+    area_link        VARCHAR,
+    bng_hab_mgt      VARCHAR,
+    bng_hab_creation VARCHAR,
+    local_funding_schemes VARCHAR
+);
+
+
+CREATE OR REPLACE TABLE priority (
+    priority_id INTEGER NOT NULL PRIMARY KEY,
+    biodiversity_priority           VARCHAR,
+    simplified_biodiversity_priority VARCHAR,
+    theme                           VARCHAR
+);
+
+
+CREATE OR REPLACE TABLE species(
+    taxa VARCHAR,
+    common_name VARCHAR,
+    assemblage VARCHAR,
+    linnaean_name VARCHAR,
+    species_id INTEGER PRIMARY KEY,
+    usage_key VARCHAR,
+    scientific_name VARCHAR,
+    status VARCHAR,
+    kingdom VARCHAR,
+    phylum VARCHAR,
+    "order" VARCHAR,
+    "family" VARCHAR,
+    genus VARCHAR,
+    species VARCHAR,
+    kingdom_key VARCHAR,
+    phylum_key VARCHAR,
+    class_key VARCHAR,
+    order_key VARCHAR,
+    family_key VARCHAR,
+    genus_key VARCHAR,
+    species_key VARCHAR,
+    "synonym" VARCHAR,
+    "class" VARCHAR,
+    accepted_usage_key VARCHAR,
+    verbatim_name VARCHAR,
+    verbatim_index BIGINT,
+    gbif_species_url VARCHAR,
+    image_url VARCHAR,
+    license VARCHAR,
+    attribution VARCHAR,
+    photo_url VARCHAR);
+
+
+CREATE OR REPLACE TABLE grant_table (
+    grant_id              VARCHAR NOT NULL PRIMARY KEY,
+    grant_name            VARCHAR,
+    grant_scheme          VARCHAR,
+    url                   VARCHAR,
+    summary_wrapped       VARCHAR
+);
+
+CREATE OR REPLACE TABLE measure_area_priority (
+    measure_id  INTEGER NOT NULL,
+    area_id     INTEGER NOT NULL,
+    priority_id INTEGER NOT NULL,
+    PRIMARY KEY (measure_id, area_id, priority_id),
+    FOREIGN KEY (measure_id)  REFERENCES measure(measure_id),
+    FOREIGN KEY (area_id)     REFERENCES area(area_id),
+    FOREIGN KEY (priority_id) REFERENCES priority(priority_id)
+);
+
+CREATE OR REPLACE TABLE measure_area_priority_grant (
+    measure_id  INTEGER NOT NULL,
+    area_id     INTEGER NOT NULL,
+    priority_id INTEGER NOT NULL,
+    grant_id    VARCHAR NOT NULL,
+    PRIMARY KEY (measure_id, area_id, priority_id, grant_id),
+    FOREIGN KEY (measure_id, area_id, priority_id)
+        REFERENCES measure_area_priority (measure_id, area_id, priority_id),
+    FOREIGN KEY (grant_id) REFERENCES grant_table(grant_id)
+);
+
+CREATE OR REPLACE TABLE species_area_priority(
+    species_id INTEGER NOT NULL,
+    area_id INTEGER NOT NULL,
+    priority_id INTEGER NOT NULL,
+PRIMARY KEY (species_id, area_id, priority_id),
+FOREIGN KEY (species_id) REFERENCES species(species_id),
+FOREIGN KEY (area_id) REFERENCES area(area_id),
+FOREIGN KEY (priority_id) REFERENCES priority(priority_id));
+
+CREATE OR REPLACE TABLE area_geom(
+    geo_point_2d GEOMETRY,
+    geo_shape GEOMETRY,
+    area_id INTEGER
+);
