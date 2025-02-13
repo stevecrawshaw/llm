@@ -1,0 +1,34 @@
+A. What the postcode level data contains
+Postcode level domestic gas consumption data contains the following rows:
+
+Column	Description
+Outcode	This is the first part of the postcode which represents the postcode district. For example, the postcode “AB10 1AU” is within the postcode district “AB10”.
+Postcode	The postcode, for example, “AB10 1AU”. Where the value shown is “All postcodes”, the given row represents the entire postcode district (outcode), e.g. “AB10”.
+Num_meters	The number of domestic gas meters.
+Total_cons_kwh	The total annual gas consumption of these meters (kilowatt hours).
+Mean_cons_kwh	The mean annual gas consumption per meter (kilowatt hours).
+Median_cons_kwh	The median annual gas consumption per meter (kilowatt hours). This is the consumption value for which half of meters are above and half of meters are below. This gives a better reflection of typical consumption at the given postcode. This is because, unlike the mean consumption it is not distorted by extreme values.
+B. What is included and excluded in the postcode level data
+Meters excluded
+Unlike the equivalent statistics published at local authority, middle-layer super output area (MSOA) level and lower-layer super output area (LSOA) levels; meters with a recorded annual gas consumption of less than 100kWh have been excluded from the postcode level data.
+
+Some meters did not have postcodes which could be matched to the ONS National Statistics Postcodes Lookup (NSPL). These meters have been removed from the statistics for individual postcodes. Such meters were retained in the aggregated statistics by outcode (the rows where the specified postcode is “All postcodes”) if they had a valid outcode.
+
+Disclosive postcodes
+The statistics for a given postcodes are considered to be disclosive (and therefore supressed) if:
+
+there are less than 5 gas meters allocated to the postcode
+the top 2 highest consuming meters make up more than 90% of the total consumption of the postcode
+Disclosive meters at outcode level
+In addition to data on individual postcodes (where they are not disclosive), rows are also included to provide the aggregate statistics for entire postcode districts (outcodes, for example ‘AB10’). These are the rows where the specified postcode is ‘All postcodes’.
+
+The remaining meter with the highest consumption is removed iteratively from the aggregate statistics for a given outcode while the top two highest consuming meters make up more than 90% of total consumption. Any statistics based on fewer than 5 remaining meters are suppressed.
+
+In virtually all cases the entire outcode is suppressed (for the meter type) rather than individual high consuming meters being removed.
+
+C. Additional information
+Please also note that:
+
+Information about how gas meters have been classified as being domestic can be found in the subnational methodology and guidance note.
+Mean and median consumption values for a particular postcode can differ considerably. This is typically because a small number of meters have much higher consumption than the rest, distorting the mean.
+Before using any of these datasets, please refer to the relevant chapter in the subnational methodology and guidance note.

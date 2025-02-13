@@ -1,0 +1,243 @@
+Fitting linear models within Polars
+By Liam Brannigan
+Posted Apr 3, 2024  Updated 2 months ago  8 min read
+Linear models are a staple of data science and machine learning. They are simple to understand and quick to fit. With this great new Polars plugin you can now fit linear model - including Lasso and Ridge regression - directly within Polars.
+
+This is based on work done by Amzy Rajab in this github repo.
+
+The first step if you want to follow along is to install the plugin. You can do this with the following command
+
+pip install polars-ols patsy
+where the patsy package is used to parse formulae (though we don’t use this below).
+
+Want to accelerate your analysis with Polars? Join over 3,000 learners on my highly-rated Up & Running with Polars course
+
+Registering the namespace
+We fit the models with the polars-ols package. Polars-ols is a Polars plugin. When we import a plugin the plugin registers its namespace with Polars. A namespace is a set of expressions that are gathered under a title and works in the same way as built-in namespaces such as dt for timeseries expressions or str for string expressions.
+
+We start by importing Polars and the plugin
+
+import polars as pl
+import polars_ols as pls  
+When we import a plugin the plugin registers its namespace with Polars. We can then access the expressions in the namespace which in this case is called least_squares.
+
+Fitting a linear model
+We create a DataFrame with a target column y that we regress against two predictor columns x1 and x2. This is adapted from the example made by Amzy Rajab
+
+df = pl.DataFrame(
+    {
+        "y": [1.16, -2.16, -1.57, 0.21, 0.22, 1.6, -2.11, -2.92, -0.86, 0.47],
+        "x1": [0.72, -2.43, -0.63, 0.05, -0.07, 0.65, -0.02, -1.64, -0.92, -0.27],
+        "x2": [0.24, 0.18, -0.95, 0.23, 0.44, 1.01, -2.08, -1.36, 0.01, 0.75],
+    }
+)
+df.head()
+shape: (5, 3)
+┌───────┬───────┬───────┐
+│ y     ┆ x1    ┆ x2    │
+│ ---   ┆ ---   ┆ ---   │
+│ f64   ┆ f64   ┆ f64   │
+╞═══════╪═══════╪═══════╡
+│ 1.16  ┆ 0.72  ┆ 0.24  │
+│ -2.16 ┆ -2.43 ┆ 0.18  │
+│ -1.57 ┆ -0.63 ┆ -0.95 │
+│ 0.21  ┆ 0.05  ┆ 0.23  │
+│ 0.22  ┆ -0.07 ┆ 0.44  │
+└───────┴───────┴───────┘
+We start by fitting an ordinary least squares (i.e. vanilla linear regression) model. We specify:
+
+the target column as pl.col("y")
+an ordinary least squares model with the least_squares.ols expression
+the predictors as a list of expressions inside least_squares.ols
+the name of the output column of predictions with alias
+ols_expr = (
+  pl.col("y")
+  .least_squares.ols(
+      pl.col("x1"), 
+      pl.col("x2")
+  )
+  .alias("ols")
+)
+We can then add a column with the predictions by passing the expression to with_columns
+
+(
+  df
+  .with_columns(
+      ols_expr
+  )
+)       
+shape: (10, 4)
+┌───────┬───────┬───────┬───────────┐
+│ y     ┆ x1    ┆ x2    ┆ ols       │
+│ ---   ┆ ---   ┆ ---   ┆ ---       │
+│ f64   ┆ f64   ┆ f64   ┆ f32       │
+╞═══════╪═══════╪═══════╪═══════════╡
+│ 1.16  ┆ 0.72  ┆ 0.24  ┆ 0.940459  │
+│ -2.16 ┆ -2.43 ┆ 0.18  ┆ -2.196536 │
+│ -1.57 ┆ -0.63 ┆ -0.95 ┆ -1.55357  │
+│ 0.21  ┆ 0.05  ┆ 0.23  ┆ 0.275953  │
+│ 0.22  ┆ -0.07 ┆ 0.44  ┆ 0.366057  │
+│ 1.6   ┆ 0.65  ┆ 1.01  ┆ 1.632354  │
+│ -2.11 ┆ -0.02 ┆ -2.08 ┆ -2.07331  │
+│ -2.92 ┆ -1.64 ┆ -1.36 ┆ -2.945234 │
+│ -0.86 ┆ -0.92 ┆ 0.01  ┆ -0.889025 │
+│ 0.47  ┆ -0.27 ┆ 0.75  ┆ 0.476734  │
+└───────┴───────┴───────┴───────────┘
+And voila! We have the predictions from the linear model in the ols column.
+
+Fitting a regularised model
+The library also supports fitting regularised models such as Lasso and Ridge regression. We can fit a Lasso model by using least_squares.lasso instead of least_squares.ols . We also specify the alpha parameter which is the regularisation strength.
+
+lasso_expr = (
+    pl.col("y")
+    .least_squares.lasso(
+        pl.col("x1"), 
+        pl.col("x2"), 
+        alpha=0.0001, 
+        add_intercept=True
+    )
+)
+Note - I’ve compared the results of the Elastic Net model with the results from the Scikit-learn library and they closely match.
+
+Training a model for use on a test set
+In the examples above we made predictions on the same data that we used to train the model. In practice we typically want to train the model on a training set and then apply it to new data. We can do this with python-ols because we can also have it output the regression coefficients instead of the predictions.
+
+Returning to our original ordinary least squares model we can get the coefficients by setting mode="coefficients" in the ols method.
+
+ols_coef_expr = (
+    pl.col("y")
+    .least_squares.ols(
+        pl.col("x1"), 
+        pl.col("x2"), 
+        add_intercept=True,
+        mode="coefficients"
+    )
+    .alias("ols_intercept")
+)
+The coefficients are returned as a pl.Struct column that we unnest to get the values as separate columns.
+
+(
+    df
+    .select(
+        ols_coef_expr
+    )
+    .unnest("ols_intercept")
+)
+shape: (1, 3)
+┌──────────┬──────────┬──────────┐
+│ x1       ┆ x2       ┆ const    │
+│ ---      ┆ ---      ┆ ---      │
+│ f32      ┆ f32      ┆ f32      │
+╞══════════╪══════════╪══════════╡
+│ 0.977375 ┆ 0.987413 ┆ 0.000757 │
+└──────────┴──────────┴──────────┘
+Now that we have the coefficients we can use them to predict the target variable on a new dataset.
+
+To make this really streamlined we can use the classic Scikit-learn approach of having a fit and transform method (though you could also call it a predict method). We can do this by creating a linear regression class with these methods
+
+from typing import List
+
+class LinearRegressor:
+    def __init__(
+        self,
+        target_col:str="y",
+        feature_cols:List[str]=["x1","x2"],
+        model="ols",
+        add_intercept:bool=False
+    ):
+        self.target_col = target_col
+        self.feature_cols = [pl.col(feature) for feature in feature_cols]
+        self.add_intercept = add_intercept
+        if model == "ols":
+            self.model_expr = (
+            pl.col(self.target_col)
+            .least_squares.ols(
+                *self.feature_cols,
+                mode="coefficients",
+                add_intercept=self.add_intercept
+            )
+            .alias("coef")
+        )
+
+    def fit(self, X):
+        # Fit the model and save the coefficients in a DataFrame
+        self.coefficients_df = (
+            X
+            .select(
+                self.model_expr
+            )
+            .unnest("coef")
+        )
+        self.coef_ = (
+            self.coefficients_df
+            .select(self.feature_cols)
+            .melt()
+        )
+        if self.add_intercept:
+            self.intercept_ = self.coefficients_df["const"][0]
+        else:
+            self.intercept_ = 0.0
+        return self
+
+    def transform(self, X: pl.DataFrame):
+        # Make predictions using the saved coefficients
+        return (
+            X
+            # Add a row index
+            .with_row_index()
+            .pipe(
+                # Join the predictions
+                lambda X: X.join(
+                    # Select the predictor columns
+                    X.select("index", *self.feature_cols)
+                    # Melt (so we can join the coefficients)
+                    .melt(id_vars="index",value_name="predictor")
+                    .join(
+                        # Join the coefficients
+                    (
+                        X
+                        .select(
+                            self.model_expr
+                        )
+                        .unnest("coef")
+                        .melt(value_name="coef")
+                    ),
+                        on="variable",
+                    )
+                    # Multiply by the predictors
+                    .with_columns(pred=(pl.col("predictor") * pl.col("coef")))
+                    # Gather back up into rows
+                    .group_by("index")
+                    .agg(
+                        pl.col("pred").sum() + self.intercept_
+                    ),
+                    on="index",
+                )
+            )
+            .sort("index")
+        )
+
+The basic idea is that:
+
+in fit we create the DataFrame we saw earlier with the variable names and coefficients
+in transform we melt the feature matrix X to long format so that we can join the coefficients to the data on the variable names. We then multiply the coefficients by the data and sum across all data on the same row to get the predictions.
+We then use this class to make predictions on a test DataFrame as follows:
+
+df_train, df_test = df[:7], df[7:]
+
+linear_regressor = LinearRegressor(target_col="y",feature_cols=["x1","x2"],model="ols")
+
+reg.fit(X=df_train)
+
+reg.transform(X=df_test)
+shape: (3, 5)
+┌───────┬───────┬───────┬───────┬───────────┐
+│ index ┆ y     ┆ x1    ┆ x2    ┆ pred      │
+│ ---   ┆ ---   ┆ ---   ┆ ---   ┆ ---       │
+│ u32   ┆ f64   ┆ f64   ┆ f64   ┆ f64       │
+╞═══════╪═══════╪═══════╪═══════╪═══════════╡
+│ 0     ┆ -2.92 ┆ -1.64 ┆ -1.36 ┆ -2.945234 │
+│ 1     ┆ -0.86 ┆ -0.92 ┆ 0.01  ┆ -0.889025 │
+│ 2     ┆ 0.47  ┆ -0.27 ┆ 0.75  ┆ 0.476734  │
+└───────┴───────┴───────┴───────┴───────────┘
+This is just the start of what you can do with the polars-ols plugin. Topics I haven’t covered here include fitting models to different sub-groups of data, fitting models on rolling windows and fitting models with formulae. I cover these in more detail in my Up & Running with Polars course.
